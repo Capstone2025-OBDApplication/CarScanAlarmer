@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Bluetooth persmissions on older devices-->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="29" /> <!--30 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="29" />  <!--30 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Android 12(API 31) 에서 필요 -->
+    <!-- app looks for Bluetooth devices-->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <!-- communicates with already-paired Bluetooth devices-->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- 블루투스 클래식 필요 -->
+    <uses-feature android:name="android.hardware.bluetooth" android:required="true"/>
+    <!-- companing device manager api 페어링 기기 관리-->
+    <uses-feature android:name="android.software.companion_device_setup" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Canstone2"
+        tools:targetApi="29" > <!--31 -->
+
+        <activity
+            android:name = ".MainActivityB"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+
+    </application>
+
+</manifest>
