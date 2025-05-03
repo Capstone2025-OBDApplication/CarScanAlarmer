@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Canstone2</string>
+    <string name="text_rpm">%1$.1f RPM</string>
+    <string name="text_speed">%1$d km/h</string>
+</resources>
