@@ -1,26 +1,49 @@
 package com.example.canstone2
+// file
+import com.example.canstone2.localDB.DatabaseClass
+import com.example.canstone2.localDB.DataTableSensor
 
 import android.annotation.SuppressLint
 import android.Manifest
+import android.util.Log
+// os
+import android.os.Bundle
+import android.os.Build
+// bluetooth
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothSocket
+// content
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Bundle
+// widget
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
+import android.widget.TextView
+// activity, content
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import android.bluetooth.BluetoothSocket
-import android.os.Build
-import android.util.Log
-import android.widget.TextView
+import android.content.Context
+// network
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+// coroutine
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+// java
 import java.io.IOException
 import java.util.*
+// dialog
+import android.app.AlertDialog
+import android.provider.Settings
+
 
 class MainActivityB : AppCompatActivity() {
 
@@ -42,12 +65,18 @@ class MainActivityB : AppCompatActivity() {
 
     private var bluetoothSocket: BluetoothSocket? = null
 
+    // local DB
+    private lateinit var db: DatabaseClass
+
+    // 코루틴
+    private val ioScope = CoroutineScope(Dispatchers.IO + Job())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mainb)
 
-        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
+        // db 선언
+        db = DatabaseClass.getInstance(this)!!
 
         // UI 초기화
         deviceListView = findViewById(R.id.deviceListView)
@@ -55,38 +84,36 @@ class MainActivityB : AppCompatActivity() {
         tvRpmValue = findViewById(R.id.tvRpmValue)
         tvSpeedValue = findViewById(R.id.tvSpeedValue)
 
+        // 블루투스 권한 확인
+        checkPermissions()
+
+        // 블루투스
+        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
         if (bluetoothAdapter == null) {
             Toast.makeText(this, "Bluetooth를 지원하지 않는 기기입니다.", Toast.LENGTH_LONG).show()
             finish()
             return
         }
 
-        // !! 는 not Null을 의미
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
-            if (!bluetoothAdapter!!.isEnabled) {
-                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
-            }
-        } else {
-            // 권한이 없을 경우 요청
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.BLUETOOTH),
-                REQUEST_PERMISSIONS
-            )
-        }
+        // 인터넷 연결 확인
+        checkInternetAndPrompt(this)
 
-
-        checkPermissions()
-
+        // 블루투스 장치 스캔 버튼
         scanButton.setOnClickListener {
             scanDevices()
         }
 
+        // 블루투스 장치 리스트
         deviceListView.setOnItemClickListener { _, _, position, _ ->
             val device = deviceList[position]
             connectToDevice(device)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ioScope.cancel()  // 생명 주기 종료 시 코루틴 정리
     }
 
     private fun checkPermissions() {
@@ -103,6 +130,56 @@ class MainActivityB : AppCompatActivity() {
         // 권한 요청
         if (missingPermissions.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, missingPermissions.toTypedArray(), REQUEST_PERMISSIONS)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_PERMISSIONS
+            && grantResults.all{ it == PackageManager.PERMISSION_GRANTED }) {
+                Toast.makeText(this, "권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
+        }
+        else {
+            Toast.makeText(this, "권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+    }
+
+    // 인터넷 연결 확인
+    private fun isNetworkAvailable(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return when {
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+            else -> false
+        }
+    }
+
+    // 인터넷 연결 확인 및 다이얼로그 표시
+    fun checkInternetAndPrompt(context: Context) {
+        if (!isNetworkAvailable(context)) {
+            // 인터넷 연결 안됨 → 다이얼로그 표시
+            AlertDialog.Builder(context)
+                .setTitle("인터넷 연결 안됨")
+                .setMessage("인터넷에 연결되어 있지 않습니다.\n설정으로 이동하시겠습니까?")
+                .setPositiveButton("예") { dialog, _ ->
+                    // 네트워크 설정 화면으로 이동
+                    context.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+                    dialog.dismiss()
+                }
+                .setNegativeButton("아니오") { dialog, _ ->
+                    Toast.makeText(context, "인터넷 연결이 필요합니다.", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+                .setCancelable(false) // 다이얼로그 밖을 클릭해도 안 닫힘
+                .show()
         }
     }
 
@@ -140,8 +217,7 @@ class MainActivityB : AppCompatActivity() {
         Thread {
             try {
                 val uuid = device.uuids?.get(0)?.uuid
-                    // Smart-OBD II UUID: RFCOMM (00000003-0000-1000-8000-00805f9b34fb)
-//                    ?: UUID.fromString("00000003-0000-1000-8000-00805f9b34fb") // RFCOMM UUID
+                // Smart-OBD II UUID: RFCOMM (00000003-0000-1000-8000-00805f9b34fb)
                     ?: UUID.fromString("00001101-0000-1000-8000-00805f9b34fb") // 기본 SPP UUID //Serial Port
 
                 // cancelDiscovery 전에 권한 체크
@@ -160,6 +236,7 @@ class MainActivityB : AppCompatActivity() {
                 }
                 Log.d(TAG, "connectToDevice: 장치 연결에 성공 했습니다 ${device.name}")
 
+                // OBD 수신 시작
                 startObdCommunication()
 
             } catch (e: IOException) {
@@ -176,164 +253,65 @@ class MainActivityB : AppCompatActivity() {
         }.start()
     }
 
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_PERMISSIONS) {
-            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                Toast.makeText(this, "권한이 허용되었습니다.", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
-    }
-
     // 전송 및 응답 받기
     private fun startObdCommunication() {
         Log.d(TAG, "startObdCommunication: 통신을 시도합니다")
         try {
-            val inputStream = bluetoothSocket?.inputStream
-            val outputStream = bluetoothSocket?.outputStream
-
-            if (inputStream == null || outputStream == null) {
-                runOnUiThread {
-                    Toast.makeText(this, "통신 스트림을 가져올 수 없습니다.", Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, "통신 스트림을 가져올 수 없습니다")
-                }
-                return
+            bluetoothSocket?.let{
+                // OBD2 초기화 명령 보내기
+                ManagerOBD.sendObdInit(this, bluetoothSocket!!)
             }
 
-            // OBD2 초기화 명령 보내기
-            Log.d(TAG, "startObdCommunication: 리셋 명령을 내립니다")
-            sendObdCommand(outputStream, "ATZ")  // Reset
-            Thread.sleep(1000)                   // 잠시 대기
-            Log.d(TAG, "startObdCommunication: Echo off 명령을 내립니다")
-            sendObdCommand(outputStream, "ATE0")  // Echo off
-            Log.d(TAG, "startObdCommunication: LineFeeds off 명령을 내립니다")
-            sendObdCommand(outputStream, "ATL0")  // Linefeeds off
-            Log.d(TAG, "startObdCommunication: Spaces off 명령을 내립니다")
-            sendObdCommand(outputStream, "ATS0")  // Spaces off
-            Log.d(TAG, "startObdCommunication: Headers on 명령을 내립니다")
-            sendObdCommand(outputStream, "ATH0")  // Headers on (원하면 ATH0으로도 가능)
-            Log.d(TAG, "startObdCommunication: protocal auto select")
-            sendObdCommand(outputStream, "ATSP0")  // protocol auto select
 
-            // 예시로 차량 지원 PID 읽기 (0100)
-            val PID_response = sendObdCommand(outputStream, "0100")
-            Log.d(TAG, "startObdCommunication: 차량 지원 PID를 읽었습니다")
-
-            runOnUiThread {
-                Toast.makeText(this, "응답: $PID_response", Toast.LENGTH_LONG).show()
-            }
-            Log.d(TAG, "startObdCommunication: 차량 지원 PID는 $PID_response 입니다")
-            Log.d(TAG, "startObdCommunication: 차량 데이터를 수신합니다")
+            // RPM, 속도 데이터 지속적으로 받기
             while(true) {
+                // break 여기 넣거나 마지막에 if 넣거나
                 // RPM 데이터 수신
-                var RPM_response = sendObdCommand(outputStream, "010C")
-                var real_RPM_response = calculateRPM(RPM_response)
-
-//                Log.d(TAG, "startObdCommunication: 차량 지원 RPM을 읽었습니다")
+                var RPM_response = ManagerOBD.sendObdCommand("010C")
+                var real_RPM_response = ManagerOBD.calculateRPM(RPM_response)
+                // Thread sleep() 유무 차이는 없을 수도 있음 10~250 사이 값으로 테스트 해보기 rpm, speed 사이의 텀이 없어서 오류 뜰수도
+                Thread.sleep(250) // 0.25초
+                // 속도 데이터 수신
+                var Speed_response = ManagerOBD.sendObdCommand("010D")
+                var real_Speed_response = ManagerOBD.calculateSpeed(Speed_response)
 
                 runOnUiThread {
                     if(real_RPM_response != 0f) {
                         tvRpmValue.text = getString(R.string.text_rpm, real_RPM_response)
-                        Toast.makeText(this, "응답: $real_RPM_response", Toast.LENGTH_LONG).show()
                     }
-                    else{
-                        Toast.makeText(this, "RPM 응답 error", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                Log.d(TAG, "startObdCommunication: 차량 지원 RPM는 $real_RPM_response 입니다")
-
-                // 속도 데이터 수신
-                var Speed_response = sendObdCommand(outputStream, "010D")
-                var real_Speed_response = calculateSpeed(Speed_response)
-//                Log.d(TAG, "startObdCommunication: 차량 지원 Speed를 읽었습니다")
-
-                runOnUiThread {
                     if(real_Speed_response != 0) {
                         tvSpeedValue.text = getString(R.string.text_speed, real_Speed_response)
-                        Toast.makeText(this, "응답: $real_Speed_response", Toast.LENGTH_LONG).show()
-                    }
-                    else{
-                        Toast.makeText(this, " speed 응답 error", Toast.LENGTH_SHORT).show()
                     }
                 }
+                // ui 스레드 끝남
+                Log.d(TAG, "startObdCommunication: 차량 지원 RPM는 $real_RPM_response 입니다")
                 Log.d(TAG, "startObdCommunication: 차량 지원 Speed는 $real_Speed_response 입니다")
+
+                ioScope.launch{
+                    // local DB (Room) 데이터 생성
+                    val data = DataTableSensor(
+                        date = System.currentTimeMillis(),
+                        accel = 0,
+                        rpm = real_RPM_response,
+                        speed = real_Speed_response,
+                        brake = 0.toString()
+                    )
+
+                    // local DB (Room) 데이터 저장
+                    db.sensorDAO().insertAll(data)
+
+                    // firebase DB 데이터 추가
+                    ManagerFirebase.addSensorDataBuffer(
+                        speed = real_Speed_response,
+                        rpm = real_RPM_response,
+                        accel = 0,
+                        brake = 0.toString()
+                    )
+                }
             }
-
-
+            Thread.sleep(500) // 0.5초 // 항상 넣기 쓰레드 안에
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-    }
-
-
-    // 명령어 전송
-    private fun sendObdCommand(outputStream: java.io.OutputStream, command: String): String {
-        val cmdWithReturn = "$command\r"
-        outputStream.write(cmdWithReturn.toByteArray())
-        outputStream.flush()
-
-        val inputStream = bluetoothSocket?.inputStream ?: return ""
-
-        val response = StringBuilder()
-        val buffer = ByteArray(1024)
-
-        while (true) {
-            val bytesRead = inputStream.read(buffer)
-            if (bytesRead > 0) {
-                val chunk = String(buffer, 0, bytesRead)
-                response.append(chunk)
-                if (chunk.contains(">")) { // OBD 통신 응답 구분자
-                    break // 응답 끝남
-                }
-            } else {
-                break
-            }
-        }
-
-        return response.toString()
-            .replace("\r", "")
-            .replace("\n", "")
-            .replace(">", "")
-            .trim() // 공백 제거
-    }
-
-    // OBD2 데이터 파싱 유틸리티 메서드
-    companion object {
-        // RPM 값 계산 (응답: 41 0C XX YY)
-        fun calculateRPM(response: String): Float {
-            try {
-                val bytes = response.chunked(2)
-                if (bytes.size >= 4 && bytes[0] == "41" && bytes[1] == "0C") {
-                    val a = Integer.parseInt(bytes[2], 16)
-                    val b = Integer.parseInt(bytes[3], 16)
-                    return (a * 256 + b) / 4f
-
-                }
-            } catch (e: Exception) {
-                Log.e("OBD2Calc", "RPM 계산 오류", e)
-            }
-            return 0f
-        }
-
-        // 속도 계산 (응답: 41 0D XX)
-        fun calculateSpeed(response: String): Int {
-            try {
-                val bytes = response.chunked(2)
-                if (bytes.size >= 3 && bytes[0] == "41" && bytes[1] == "0D") {
-                    return bytes[2].toInt(16)
-                }
-            } catch (e: Exception) {
-                Log.e("OBD2Calc", "속도 계산 오류", e)
-            }
-            return 0
         }
     }
 }

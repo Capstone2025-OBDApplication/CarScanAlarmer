@@ -1,0 +1,44 @@
+package com.example.canstone2.localDB
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+
+@Dao
+interface DaoSensorData {
+    // 가져오기
+    @Query("SELECT * FROM sensor_table")
+    fun loadAll(): List<DataTableSensor>
+
+    // 날짜로 가져오기
+    @Query("SELECT * FROM sensor_table " +
+            "WHERE timestamp = :selectedDate")
+    fun findByDate(selectedDate: String) : List<DataTableSensor>
+
+    @Insert
+    // vararg : 호출 인자 갯수를 유동적으로 지정
+    fun insertAll(vararg data: DataTableSensor) // 변수 : datas // 배열로 들어옴
+
+    @Delete
+    fun delete(table: DataTableSensor)
+}
+
+@Dao
+interface DaoAlarmData {
+    // 가져오기
+    @Query("SELECT * FROM alarm_table")
+    fun loadAll(): List<DataTableAlarm>
+
+    // 날짜로 가져오기
+    @Query("SELECT * FROM alarm_table " +
+            "WHERE timestamp = :selectedDate")
+    fun findByDate(selectedDate: String) : List<DataTableAlarm>
+
+    @Insert
+    // vararg : 호출 인자 갯수를 유동적으로 지정
+    fun insertAll(vararg data: DataTableAlarm) // 변수 : datas // 배열로 들어옴
+
+    @Delete
+    fun delete(table: DataTableAlarm)
+}
