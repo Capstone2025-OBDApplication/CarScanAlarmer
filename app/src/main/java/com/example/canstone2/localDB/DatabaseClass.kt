@@ -7,11 +7,15 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [DataTableSensor::class], version = 4)
+@Database(
+    entities = [DataTableSensor::class, DataTableSensorClass::class, DataTableAlarm::class],
+    version = 5
+)
 abstract class DatabaseClass : RoomDatabase() {
     // 자동으로 DAO값 채워줌
     abstract fun sensorDAO(): DaoSensorData
-//    abstract fun alarmDAO(): DaoAlarmData
+    abstract fun alarmDAO(): DaoAlarmData
+    abstract fun sensorClassDAO(): DaoSensorClassData
 
     // 인스턴스 중복 생성 방지 (싱글톤 패턴 : 하나의 앱에 하나의 DB 전역적으로 재활용)
     companion object {
@@ -27,7 +31,7 @@ abstract class DatabaseClass : RoomDatabase() {
                     DatabaseClass::class.java,
                     "local_database" // 이름 다르게
                 )
-                    .fallbackToDestructiveMigrationFrom(true, 3)
+                    .fallbackToDestructiveMigration() // 스키마 변경시 기존 데이터 삭제
                     .build()
                     INSTANCE = instance
                     instance

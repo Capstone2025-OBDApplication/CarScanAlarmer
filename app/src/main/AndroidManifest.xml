@@ -19,6 +19,9 @@
     <!-- companing device manager api 페어링 기기 관리-->
     <uses-feature android:name="android.software.companion_device_setup" />
 
+    <!-- 블루투스 BLE 필요-->
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+
     <!--인터넷 권한 추가 HTTP-->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -42,11 +45,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-<!--        <service-->
-<!--            android:name=".OBDBluetoothService"-->
-<!--            android:foregroundServiceType="connectedDevice"-->
-<!--            android:exported="false"/>-->
 
     </application>
 

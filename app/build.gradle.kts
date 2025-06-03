@@ -50,9 +50,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     // Retrofit (REST API)
-    implementation(libs.retrofit)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit2.kotlinx.serialization.converter)
+//    implementation(libs.retrofit)
+//    implementation(libs.kotlinx.serialization.json)
+//    implementation(libs.retrofit2.kotlinx.serialization.converter)
     // OkHttp
 //    implementation("com.squareup.okhttp3:okhttp")
 //    implementation(libs.logging.interceptor)
@@ -72,5 +72,15 @@ dependencies {
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     // ONNX (AI)
     implementation ("com.microsoft.onnxruntime:onnxruntime-android:1.16.3")
-
+    // ViewModel KTX (viewModelScope 포함)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.0")
+    // LiveData KTX
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.0")
+    // Activity KTX
+    implementation("androidx.activity:activity-ktx:1.10.0")
+    // Fragment KTX
+    implementation("androidx.fragment:fragment-ktx:1.5.7")
+    // Coroutine
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
