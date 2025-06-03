@@ -83,4 +83,12 @@ dependencies {
     // Coroutine
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    // front 병합
+    implementation ("androidx.recyclerview:recyclerview:1.2.1")
+    implementation ("com.github.PhilJay:MPAndroidChart:3.1.0")
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+    // implementation(libs.androidx.ui.text.android)
 }
