@@ -2,4 +2,24 @@
     <string name="app_name">Canstone2</string>
     <string name="text_rpm">%1$.1f RPM</string>
     <string name="text_speed">%1$d km/h</string>
+<!--    여기서 부터 병합   -->
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="speed">Speed</string>
+    <string name="brake">Brake</string>
+    <string name="accel">Accel</string>
+    <string name="rpm">RPM</string>
+    <string name="emergency_number">112</string>
+    <string name="emergency_icon">경고 아이콘</string>
+    <string name="report_question">신고할까요?</string>
+    <string name="error_detection">급발진 오류 감지</string>
+    <string name="instruction">"‘예’라고 말하거나 음량 버튼을 누르세요"</string>
+    <string name="report_timer">신고(10s)</string>
+    <string name="cancel">취소</string>
+    <string name="emergency_instruction">음성 안내를 따르세요</string>
+    <string name="emergency_question">신고할까요?</string>
+    <string name="emergency_countdown">10초 후 신고됩니다</string>
+    <string name="description_text112">긴급 전화 번호</string>
+    <string name="description_errorDetectionText">급발진 오류 감지 안내 텍스트</string>
 </resources>

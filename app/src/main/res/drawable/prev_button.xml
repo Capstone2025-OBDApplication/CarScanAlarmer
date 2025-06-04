@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="25dp"
+    android:height="30dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 좌측을 향하는 삼각형 -->
+    <path
+        android:fillColor="@color/gray"
+        android:pathData="M16,4 L8,12 L16,20 Z" />
+</vector>

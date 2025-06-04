@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#BB86FC</color>
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="teal_200">#03DAC5</color>
+    <color name="teal_700">#018786</color> <!--꼭 이거 사용하는 애들 없애서 이거 없애버릴꺼임-->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="light_blue">#EAF0FE</color> <!-- 여기에 추가 -->
+    <color name="blue">#306CF7</color>
+    <color name="red">#D41D1D</color>
+    <color name="gray">#888888</color>
+    <color name="light_red">#FFCECE</color>
+    <color name="light_gray">#EBEBEB</color>
+    <color name="purple">#7930F7</color>
+    <color name="green">#028553</color>
+    <color name="another_blue">#0074D9</color>
+    <color name="orange">#E87103</color>
+
+</resources>

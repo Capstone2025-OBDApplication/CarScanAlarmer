@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <TextView
+        android:id="@+id/grahTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:text="압력센서 &amp; 속력 비교"
+        android:padding="8dp"
+        android:textColor="@color/black"/>
+
+    <LinearLayout
+        android:id="@+id/customLegend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_gravity="center"
+        android:gravity="center_vertical"
+        android:padding="4dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="16dp"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/cirlcle"
+                android:backgroundTint="@color/orange"
+                android:textStyle="bold"
+
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="속도"
+                android:textSize="12sp"
+                android:textColor="@color/orange"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="16dp"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/cirlcle"
+                android:backgroundTint="@color/green"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RPM"
+                android:textSize="12sp"
+                android:textColor="@color/green"
+                android:textStyle="bold"
+                />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="16dp"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/cirlcle"
+                android:backgroundTint="@color/another_blue" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="브레이크"
+                android:textSize="12sp"
+                android:textColor="@color/another_blue"
+                android:textStyle="bold"
+                />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="16dp"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/cirlcle"
+                android:backgroundTint="@color/purple"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="엑셀"
+                android:textSize="12sp"
+                android:textColor="@color/purple"
+                android:textStyle="bold"
+                />
+        </LinearLayout>
+    </LinearLayout>
+
+
+    <!-- LineChart 그래프 -->
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/graphChart"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 버튼들 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp">
+
+        <CheckBox
+            android:id="@+id/btnSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="속도"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:layout_marginRight="20dp"
+            android:checked="true"/>
+
+        <CheckBox
+            android:id="@+id/btnRpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RPM"
+            android:textStyle="bold"
+            android:layout_marginRight="20dp"
+            android:checked="true"/>
+
+        <CheckBox
+            android:id="@+id/btnBrake"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="브레이크"
+            android:textStyle="bold"
+            android:layout_marginRight="20dp"
+            android:checked="true"/>
+
+        <CheckBox
+            android:id="@+id/btnAccel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="엑셀"
+            android:textStyle="bold"
+            android:checked="true"/>
+    </LinearLayout>
+</merge>

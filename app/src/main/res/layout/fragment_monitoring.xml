@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="실시간 모니터링"
+        android:textSize="25sp"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:layout_marginBottom="15dp"
+        android:gravity="center"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/currentInfo"
+        android:orientation="horizontal"
+        android:layout_below="@id/titleTextView"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+
+        >
+        <LinearLayout
+            android:id="@+id/currentRpm"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_background"
+            android:backgroundTint="@color/black"
+            android:padding="12dp"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/rpmTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RPM"
+                android:textSize="25dp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/rpmValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="25dp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/currentSpeed"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/titleTextView"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_background"
+            android:backgroundTint="@color/black"
+            android:padding="12dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="20dp">
+
+            <TextView
+                android:id="@+id/speedTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SPEED"
+                android:textSize="25dp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/speedValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="25dp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <com.example.canstone2.CustomGraphView
+        android:id="@+id/graphView"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:layout_below="@id/currentInfo"
+        android:gravity="center"
+        />
+
+</RelativeLayout>

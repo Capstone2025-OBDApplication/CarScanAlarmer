@@ -1,0 +1,20 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 세로 줄 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/blue"/>
+            <corners android:radius="10dp"/>
+        </shape>
+    </item>
+
+    <!-- 가로 줄 -->
+    <item
+        android:left="0dp"
+        android:top="150dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/blue"/>
+            <corners android:radius="10dp"/>
+        </shape>
+    </item>
+</layer-list>
