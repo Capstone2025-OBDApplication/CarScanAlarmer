@@ -39,7 +39,7 @@ class NotificationFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
 
-        val backButton = view.findViewById<ImageView>(R.id.ic_back)
+        //val backButton = view.findViewById<ImageView>(R.id.ic_back)
 
         val db = FirebaseFirestore.getInstance()
 
@@ -64,6 +64,7 @@ class NotificationFragment : Fragment() {
             .addOnFailureListener { e ->
                 Log.w("Firestore", "데이터 가져오기 실패", e)
             }
+        // TODO :
             /*
          val notifications = listOf(
             NotificationItem("detect", "accept", "2024-05-26T15:10:03Z"),
@@ -72,6 +73,7 @@ class NotificationFragment : Fragment() {
         )
         val testList = buildDisplayList(notifications)
         adapter.submitList(testList)*/
+        /////////// TODO /////////////
         return view
     }
     private fun buildDisplayList(items: List<NotificationItem>): List<NotificationDisplayItem> {

@@ -80,10 +80,6 @@ class CustomGraphView @JvmOverloads constructor(
         chart.isDragEnabled = true
         chart.setScaleEnabled(false)
         chart.legend.isEnabled = false
-
-        chart.axisLeft.axisMinimum = 0f
-        chart.axisLeft.axisMaximum = 250f
-        chart.axisRight.axisMaximum = 200f
     }
 
     private fun setupButtons() {
@@ -157,23 +153,23 @@ class CustomGraphView @JvmOverloads constructor(
     ) {
         graphDataSets[GraphType.SPEED]?.apply {
             clear()
-            values = speedList
+            values = speedList.toMutableList()
         }
         graphDataSets[GraphType.BRAKE]?.apply {
             clear()
-            values = brakeList
+            values = brakeList.toMutableList()
         }
         graphDataSets[GraphType.ACCEL]?.apply {
             clear()
-            values = accelList
+            values = accelList.toMutableList()
         }
         graphDataSets[GraphType.RPM]?.apply {
             clear()
-            values = rpmList
+            values = rpmList.toMutableList()
         }
 
-        highlightList.clear()
-        highlightList.addAll(highlightXs)
+        this.highlightList.clear()
+        this.highlightList.addAll(highlightXs)
 
         chart.xAxis.axisMaximum = (speedList.maxOfOrNull { it.x } ?: 0f).coerceAtLeast(10f)
 

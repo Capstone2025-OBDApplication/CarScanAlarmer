@@ -6,25 +6,31 @@ import com.example.canstone2.localDB.ObdData
 import com.example.canstone2.repository.RepositorySensor
 import com.example.canstone2.onnx.OnnxModelRunner
 import com.example.canstone2.ManagerOBD
-import com.example.canstone2.ManagerArduinoBLE
+
 
 import android.app.Application
 import android.bluetooth.BluetoothSocket
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.canstone2.ManagerArduino
 import com.example.canstone2.ManagerFirebase
+import com.example.canstone2.localDB.ArduinoData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 class ViewModelMain(application: Application) : AndroidViewModel(application) {
-    val appContext = application.applicationContext
+     val appContext = application.applicationContext
 
     // local DB 선언
     private val db = DatabaseClass.getInstance(application.applicationContext)!!
@@ -34,13 +40,19 @@ class ViewModelMain(application: Application) : AndroidViewModel(application) {
     // manager OBD 선언
     private val managerOBD = ManagerOBD()
     // manager BLE
-    private val managerBLE = null // TODO
+    private val managerArduino = ManagerArduino("HC-06")
 
     // ONNX 모델
     private val modelRunner = OnnxModelRunner(application.applicationContext)
     // 예측 결과
     private val _prediction = MutableLiveData<Int>()
     val prediction: LiveData<Int> get() = _prediction
+
+    //
+    private val _obdDataLive = MutableLiveData<ObdData>()
+    val sensorData: LiveData<ObdData> get() = _obdDataLive
+
+
 
     fun runPrediction(speed: Int, rpm: Float, accel: Int, brake: Int) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -64,26 +76,20 @@ class ViewModelMain(application: Application) : AndroidViewModel(application) {
     }
 
     fun saveToFirebase(speed: Int, rpm: Float, accel: Int, brake: Int) {
-        // firebase DB 데이터 추가
-        ManagerFirebase.addSensorDataBuffer( // date 자동 생성
-            speed = speed,
-            rpm = rpm,
-            accel = accel,
-            brake = brake.toString()
-        )
+        viewModelScope.launch(Dispatchers.IO) {
+            // firebase DB 데이터 추가
+            ManagerFirebase.addSensorDataBuffer( // date 자동 생성
+                speed = speed,
+                rpm = rpm,
+                accel = accel,
+                brake = brake
+            )
+        }
     }
 
     fun startSensorCollection(socket: BluetoothSocket): Flow<ObdData> {
-        return managerOBD.startObdFlow(appContext, socket)
-//            .combine(managerBLE.bleFlow()) { obd, ble ->
-//                DataTableSensor(
-//                    date = System.currentTimeMillis(),
-//                    speed = obd.speed,
-//                    rpm = obd.rpm,
-//                    accel = 0,
-//                    brake = 0.toString()
-//                )
-//            }
+//        return managerOBD.startObdFlow(appContext, socket)
+        return managerOBD.startObdFlow(socket)
             .onEach { data : ObdData ->
                 runPrediction(data.speed, data.rpm, 0, 1)
                 val sensor = DataTableSensor(
@@ -91,11 +97,36 @@ class ViewModelMain(application: Application) : AndroidViewModel(application) {
                     speed = data.speed,
                     rpm = data.rpm,
                     accel = 0,
-                    brake = 1.toString()
+                    brake = 1
                 )
-                 saveToLocal(sensor)
-                 // saveToFirebase(data.speed, data.rpm, 0, 1)
+                saveToLocal(sensor)
+                _obdDataLive.postValue(data)
+                // saveToFirebase(data.speed, data.rpm, 0, 1)
             }
             .flowOn(Dispatchers.IO)
     }
+
+//    fun startSensorCollectionArduino(obdSocket: BluetoothSocket, arduinoSocket: BluetoothSocket): Flow<DataTableSensor> {
+////        return managerOBD.startObdFlow(appContext, obdSocket)
+//        return managerOBD.startObdFlow(obdSocket)
+//            .combine(managerArduino.startArduinoFlow(arduinoSocket)) { obd, ard ->
+//                DataTableSensor(
+//                    date = System.currentTimeMillis(),
+//                    speed = obd.speed,
+//                    rpm = obd.rpm,
+//                    accel = ard.accel,
+//                    brake = ard.brake
+//                )
+//            }
+//            .onEach { data : DataTableSensor ->
+//                runCatching {
+//                    runPrediction(data.speed, data.rpm, data.accel, data.brake)
+//                    saveToLocal(data)
+//                    // saveToFirebase(data.speed, data.rpm, 0, 1)
+//                }.onFailure {
+//                    Log.e("SensorCollector", "Error during processing", it)
+//                }
+//            }
+//            .flowOn(Dispatchers.IO)
+//    }
 }

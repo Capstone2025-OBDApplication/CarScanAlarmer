@@ -4,6 +4,7 @@ import com.example.canstone2.localDB.DatabaseClass
 import com.example.canstone2.localDB.DataTableSensor
 import com.example.canstone2.onnx.OnnxModelRunner
 import com.example.canstone2.viewmodel.ViewModelMain
+import com.example.canstone2.ManagerArduino
 
 import android.annotation.SuppressLint
 import android.Manifest
@@ -47,6 +48,8 @@ import android.app.AlertDialog
 import android.provider.Settings
 // lifecycle
 import androidx.activity.viewModels
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -54,6 +57,10 @@ import androidx.lifecycle.Lifecycle
 // fragment
 import com.example.canstone2.ui.AlertFragment
 import androidx.fragment.app.commit
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.firestore.FirebaseFirestore
+
+import android.view.View
 
 
 
@@ -80,9 +87,6 @@ class MainActivityB : AppCompatActivity() {
     // local DB
     private lateinit var db: DatabaseClass
 
-    // Manager
-    private val managerObd = ManagerOBD()
-
     // 코루틴
     private val ioScope = CoroutineScope(Dispatchers.IO + Job())
 
@@ -95,6 +99,7 @@ class MainActivityB : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mainb)
+        supportActionBar?.hide()
 
         // db 선언
         db = DatabaseClass.getInstance(this)!!
@@ -117,23 +122,6 @@ class MainActivityB : AppCompatActivity() {
             return
         }
 
-//        // 블루투스 BLE (아두이노) 권한 확인
-//        val bleManager = ManagerArduinoBLE(
-//            context = this,
-//            onConnected = { gatt ->
-//                runOnUiThread {
-//                    Toast.makeText(this, "Bluno 연결됨", Toast.LENGTH_SHORT).show()
-//                }
-//            },
-//            onError = { msg ->
-//                runOnUiThread {
-//                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//        )
-//        // 블루투스 BLE (아두이노) 스캔 및 연결
-//        bleManager.startScan()
-
         // 인터넷 연결 확인
         checkInternetAndPrompt(this)
 
@@ -155,12 +143,29 @@ class MainActivityB : AppCompatActivity() {
         viewModelMain.prediction.observe(this, Observer { result ->
             Log.d(TAG, "viewModelMain: 예측 결과는 $result 입니다")
             if (result == 1) { // 예측 결과가 1이면
-                supportFragmentManager.commit { // fragment 보이기
-                    replace(R.id.fragmentContainer, AlertFragment())
-                    addToBackStack(null)
-                }
+//                supportFragmentManager.commit { // fragment 보이기
+//                    replace(R.id.fragmentContainer, AlertFragment())
+//                    addToBackStack(null)
+//                }
+                val intent = Intent(this, SuddenActivity::class.java)
+                startActivity(intent)
             }
         })
+        val rootLayout = findViewById<View>(R.id.activityMainB)
+        val fragmentContainer = findViewById<View>(R.id.fragmentContainer)
+        // 화면전환
+        val gotoButton = findViewById<Button>(R.id.gotoMainButton)
+        gotoButton.setOnClickListener {
+//            val intent = Intent(this, MainActivity::class.java)
+//            startActivity(intent)
+            rootLayout.visibility = View.GONE
+            fragmentContainer.visibility = View.VISIBLE
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, MainFragment())
+                .addToBackStack(null) // 뒤로 가기 버튼 누르면 원래 화면으로 돌아감
+                .commit()
+        }
+
     }
 
     override fun onDestroy() {
@@ -267,6 +272,11 @@ class MainActivityB : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        Log.d("AAAAAAA MainActivityB", "onResume: 살아있음")
+    }
+
     @SuppressLint("MissingPermission") // 권한 체크 했음에도 API 버전 문제 때문에 코드 상으로만 경고 무시
     private fun connectToDevice(device: BluetoothDevice) {
         // 권한 체크 추가
@@ -297,19 +307,43 @@ class MainActivityB : AppCompatActivity() {
                 }
                 Log.d(TAG, "connectToDevice: 장치 연결에 성공 했습니다 ${device.name}")
 
+                // arduino socket
+//                val adapter = BluetoothAdapter.getDefaultAdapter()
+//                val arduinoDevice = adapter?.bondedDevices?.firstOrNull { it.name == "HC-06" }
+//                val arduinoSocket: BluetoothSocket? = arduinoDevice?.createRfcommSocketToServiceRecord(uuid)
+
                 // OBD 수신 시작
-                // startObdCommunication() -> onCreate에 lifecycleScope.launch로
-                // 블루투스 소켓 통신 시작
+                // startObdCommunication() -> lifecycleScope.launch로 변경
+                // 블루투스 소켓 통신 시작 (전송 및 응답 받기)
                 bluetoothSocket?.let { socket -> // 블루투스 소켓이 null이 아닐 때만 실행
                     lifecycleScope.launch {
                         repeatOnLifecycle(Lifecycle.State.STARTED) {
                             viewModelMain.startSensorCollection(socket).collect{
                                 Log.d(TAG, "데이터 수신 완료")
+                                // UI 업데이트 처리
+                                tvRpmValue.text = getString(R.string.text_rpm, it.rpm)
+                                tvSpeedValue.text = getString(R.string.text_speed, it.speed)
                             }
                         }
                     }
                 }
-
+//                if (bluetoothSocket != null && arduinoSocket != null) { // 블루투스 소켓이 null이 아닐 때만 실행
+//                    arduinoSocket.connect()
+//                    Log.d(TAG, "connectToDevice: 장치 연결에 성공 했습니다 ${arduinoDevice.name}")
+//
+//                    lifecycleScope.launch {
+//                        repeatOnLifecycle(Lifecycle.State.STARTED) {
+//                            viewModelMain.startSensorCollection(bluetoothSocket!!, arduinoSocket).collect{
+//                                Log.d(TAG, "데이터 수신 완료")
+//                                // UI 업데이트 처리
+//                                tvRpmValue.text = getString(R.string.text_rpm, it.rpm)
+//                                tvSpeedValue.text = getString(R.string.text_speed, it.speed)
+//                            }
+//                        }
+//                    }
+//                } else {
+//                    Log.e(TAG, "블루투스 장치를 찾을 수 없습니다.")
+//                }
             } catch (e: IOException) {
                 e.printStackTrace()
                 runOnUiThread {
@@ -322,106 +356,5 @@ class MainActivityB : AppCompatActivity() {
                 }
             }
         }.start()
-    }
-
-    // 전송 및 응답 받기
-    private fun startObdCommunication() {
-        Log.d(TAG, "startObdCommunication: 통신을 시도합니다")
-        val managerOBD = ManagerOBD()
-        try {
-            bluetoothSocket?.let{
-                // OBD2 초기화 명령 보내기
-                managerOBD.sendObdInit(this, bluetoothSocket!!)
-            }
-
-            // RPM, 속도 데이터 지속적으로 받기
-            while(true) {
-                // break 여기 넣거나 마지막에 if 넣거나
-                // RPM 데이터 수신
-                var RPM_response = managerOBD.sendObdCommand("010C")
-                var real_RPM_response = managerOBD.calculateRPM(RPM_response)
-                // Thread sleep() 유무 차이는 없을 수도 있음 10~250 사이 값으로 테스트 해보기 rpm, speed 사이의 텀이 없어서 오류 뜰수도
-                Thread.sleep(250) // 0.25초
-                // 속도 데이터 수신
-                var Speed_response = managerOBD.sendObdCommand("010D")
-                var real_Speed_response = managerOBD.calculateSpeed(Speed_response)
-
-                runOnUiThread {
-                    if(real_RPM_response != 0f) {
-                        tvRpmValue.text = getString(R.string.text_rpm, real_RPM_response)
-                    }
-                    Thread.sleep(250)
-                    if(real_Speed_response != 0) {
-                        tvSpeedValue.text = getString(R.string.text_speed, real_Speed_response)
-                    }
-                }
-                // ui 스레드 끝남
-                Log.d(TAG, "startObdCommunication: 차량 지원 RPM는 $real_RPM_response 입니다")
-                Log.d(TAG, "startObdCommunication: 차량 지원 Speed는 $real_Speed_response 입니다")
-
-                var real_accel = 0
-                val real_brake = 1
-
-                // 비동기 실행
-                ioScope.launch{
-                    // ONNX 모델 실행 (예측값 local DB 저장 포함)
-                    viewModelMain.runPrediction(real_Speed_response, real_RPM_response, real_accel, real_brake)
-
-                    // local DB (Room) 데이터 생성
-                    val data = DataTableSensor( // id는 자동 생성
-                        date = System.currentTimeMillis(),
-                        accel = real_accel,
-                        rpm = real_RPM_response,
-                        speed = real_Speed_response,
-                        brake = real_brake.toString()
-                    )
-
-                    // local DB (Room) 데이터 저장
-                    viewModelMain.saveToLocal(data)
-
-                    // firebase DB 데이터 추가
-                    ManagerFirebase.addSensorDataBuffer( // date 자동 생성
-                        speed = real_Speed_response,
-                        rpm = real_RPM_response,
-                        accel = real_accel,
-                        brake = real_brake.toString()
-                    )
-                }
-            }
-            Thread.sleep(500) // 0.5초 // 항상 넣기 쓰레드 안에
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    // 아두이노 데이터 처리
-    private fun handleReceivedBLEData(data: String) {
-        try {
-            val parts = data.split(",")  // ["BREAK:12.34", "ACCEL:5.67"]
-            var breakForce: Float? = null
-            var accelForce: Float? = null
-
-            for (part in parts) {
-                val keyValue = part.split(":")
-                if (keyValue.size == 2) {
-                    when (keyValue[0].trim().uppercase()) {
-                        "BREAK" -> breakForce = keyValue[1].toFloatOrNull()
-                        "ACCEL" -> accelForce = keyValue[1].toFloatOrNull()
-                    }
-                }
-            }
-
-            // UI에 표시하거나 처리
-            runOnUiThread {
-                val result = buildString {
-                    append("브레이크: ${breakForce ?: "N/A"} N\n")
-                    append("엑셀: ${accelForce ?: "N/A"} N")
-                }
-                //findViewById<TextView>(R.id.textView).text = result
-            }
-
-        } catch (e: Exception) {
-            Log.e("BLE_PARSE", "데이터 파싱 오류: ${e.message}")
-        }
     }
 }

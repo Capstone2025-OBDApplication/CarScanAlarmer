@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [DataTableSensor::class, DataTableSensorClass::class, DataTableAlarm::class],
-    version = 5
+    version = 6
 )
 abstract class DatabaseClass : RoomDatabase() {
     // 자동으로 DAO값 채워줌

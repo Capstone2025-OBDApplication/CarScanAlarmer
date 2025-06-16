@@ -12,9 +12,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -24,12 +24,15 @@ class ManagerOBD {
     private var inputStream: InputStream? = null
     private var outputStream: OutputStream? = null
 
+
     // 플로우 처리 -> RPM, 속도 데이터 지속적으로 받기 == startObdCommunication()
-    fun startObdFlow(context: Context, socket: BluetoothSocket): Flow<ObdData> = callbackFlow {
+    fun startObdFlow(socket: BluetoothSocket): Flow<ObdData> = callbackFlow {
         Log.d(TAG, "startObdCommunication: 통신을 시도합니다")
+
         try {
             // OBD2 초기화 명령 보내기
-            sendObdInit(context, socket)
+//            sendObdInit(context, socket)
+            sendObdInit(socket)
 
             // 센서 데이터 수신 루프
             val job = CoroutineScope(Dispatchers.IO).launch {
@@ -58,11 +61,9 @@ class ManagerOBD {
 
     // OBD 로부터 속도, rpm 데이터 받기
     fun getSensorDataFromObd(): ObdData{
-        // break 여기 넣거나 마지막에 if 넣거나
         // RPM 데이터 수신
         var RPM_response = sendObdCommand("010C")
         var real_RPM_response = calculateRPM(RPM_response)
-        // Thread sleep() 유무 차이는 없을 수도 있음 10~250 사이 값으로 테스트 해보기 rpm, speed 사이의 텀이 없어서 오류 뜰수도
 
         // 속도 데이터 수신
         var Speed_response = sendObdCommand("010D")
@@ -82,7 +83,8 @@ class ManagerOBD {
     }
 
     // OBD2 초기화 명령 보내기
-    fun sendObdInit(context: Context, socket: BluetoothSocket) {
+    //fun sendObdInit(context: Context, socket: BluetoothSocket) {
+    fun sendObdInit(socket: BluetoothSocket) {
         inputStream = socket.inputStream
         outputStream = socket.outputStream
 
@@ -104,7 +106,7 @@ class ManagerOBD {
         val PID_response = sendObdCommand("0100")
         Log.d(TAG, "startObdCommunication: 차량 지원 PID를 읽었습니다")
 
-        UtilNotifier.showMessageShort(context, "PID: $PID_response")
+        //UtilNotifier.showMessageShort(context, "PID: $PID_response")
 
         Log.d(TAG, "startObdCommunication: 차량 지원 PID는 $PID_response 입니다")
         Log.d(TAG, "startObdCommunication: 차량 데이터를 수신합니다")
@@ -113,31 +115,79 @@ class ManagerOBD {
     // 명령어 전송
     fun sendObdCommand(command: String): String {
         val cmdWithReturn = "$command\r"
-        outputStream?.write(cmdWithReturn.toByteArray())
-        outputStream?.flush()
 
-        val response = StringBuilder()
-        val buffer = ByteArray(1024)
-
-        while (true) {
-            val bytesRead = inputStream!!.read(buffer)
-            if (bytesRead > 0) {
-                val chunk = String(buffer, 0, bytesRead)
-                response.append(chunk)
-                if (chunk.contains(">")) { // OBD 통신 응답 구분자
-                    break // 응답 끝남
-                }
-            } else {
-                break
+        try {
+            if (outputStream == null || inputStream == null) {
+                Log.e(TAG, "스트림이 null입니다. 소켓이 닫혔을 수 있습니다.")
+                return ""
             }
-        }
 
-        return response.toString()
-            .replace("\r", "")
-            .replace("\n", "")
-            .replace(">", "")
-            .trim() // 공백 제거
+            outputStream?.write(cmdWithReturn.toByteArray())
+            outputStream?.flush()
+
+            val response = StringBuilder()
+            val buffer = ByteArray(1024)
+
+            while (true) {
+                val bytesRead = inputStream!!.read(buffer)
+                if (bytesRead > 0) {
+                    val chunk = String(buffer, 0, bytesRead)
+                    response.append(chunk)
+                    if (chunk.contains(">")) {
+                        break
+                    }
+                } else {
+                    break
+                }
+            }
+
+            return response.toString()
+                .replace("\r", "")
+                .replace("\n", "")
+                .replace(">", "")
+                .trim()
+
+        } catch (e: IOException) {
+            Log.e(TAG, "소켓이 닫혔거나 통신 중 오류: ${e.message}")
+            e.printStackTrace()
+            return ""
+        }
     }
+//    fun sendObdCommand(command: String): String {
+//        val cmdWithReturn = "$command\r"
+//
+//        try {
+//            if (outputStream == null || inputStream == null) {
+//                Log.e(TAG, "스트림이 null입니다. 소켓이 닫혔을 수 있습니다.")
+//                return ""
+//            }
+//
+//            outputStream?.write(cmdWithReturn.toByteArray())
+//            outputStream?.flush()
+//
+//            val response = StringBuilder()
+//            val buffer = ByteArray(1024)
+//
+//            while (true) {
+//                val bytesRead = inputStream!!.read(buffer)
+//                if (bytesRead > 0) {
+//                    val chunk = String(buffer, 0, bytesRead)
+//                    response.append(chunk)
+//                    if (chunk.contains(">")) { // OBD 통신 응답 구분자
+//                        break // 응답 끝남
+//                    }
+//                } else {
+//                    break
+//                }
+//
+//        }
+//
+//        return response.toString()
+//            .replace("\r", "")
+//            .replace("\n", "")
+//            .replace(">", "")
+//            .trim() // 공백 제거
+//    }
 
 
     // OBD2 데이터 파싱 유틸리티 메서드

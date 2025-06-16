@@ -9,6 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.canstone2.localDB.ObdData
+import com.example.canstone2.viewmodel.ViewModelMain
 
 class MonitoringFragment : Fragment() {
 
@@ -17,6 +24,9 @@ class MonitoringFragment : Fragment() {
     private var index = 0
     private lateinit var rpmTextView: TextView
     private lateinit var speedTextView: TextView
+
+    // 병합
+    private lateinit var viewModelMain: ViewModelMain
 
     // 예시 급발진 데이터 (속도, 브레이크, 엑셀, RPM)
     private val speedList = listOf(
@@ -51,29 +61,54 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun simulateRealTimeUpdate() {
-        if (index >= speedList.size) return
+        //if (index >= speedList.size) return
 
-        val x = index.toFloat()
-        val speed = speedList[index]
-        val brake = brakeList[index]
-        val accel = accelList[index]
-        val rpm = rpmList[index]
-        rpmTextView.text = rpm.toInt().toString()
-        speedTextView.text = speed.toInt().toString()
-        val isSuddenAccel = accel < 5f && speed > 20f && rpm > 2000f
-        graphView.updateData(
-            xValue = x,
-            speed = speed,
-            brake = brake,
-            accel = accel,
-            rpm = rpm,
-            highlight = isSuddenAccel
-        )
-        if (isAdded && isSuddenAccel) {
-            val intent = Intent(requireContext(), SuddenActivity::class.java)
-            startActivity(intent)
+        viewModelMain = ViewModelProvider(requireActivity())[ViewModelMain::class.java]
+
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModelMain.sensorData.observe(viewLifecycleOwner) { data ->
+                    data?.let {
+                        rpmTextView.text = getString(R.string.text_rpm, it.rpm).let {
+                            it.dropLast(4).trimEnd() + "\n" + it.takeLast(3)
+                        }
+                        speedTextView.text = getString(R.string.text_speed, it.speed).let {
+                            it.dropLast(5).trimEnd() + "\n" + it.takeLast(4)
+                        }
+                        graphView.updateData(
+                            xValue = index.toFloat(),
+                            speed = it.speed.toFloat(),
+                            rpm = it.rpm.toFloat(),
+                            brake = 1f,
+                            accel = 0f,
+                        )
+                        index++
+                    }
+                }
+            }
         }
-        index++
-        handler.postDelayed({ simulateRealTimeUpdate() }, 500)
+
+//        val x = index.toFloat()
+//        val speed = speedList[index]
+//        val brake = brakeList[index]
+//        val accel = accelList[index]
+//        val rpm = rpmList[index]
+//        rpmTextView.text = rpm.toInt().toString()
+//        speedTextView.text = speed.toInt().toString()
+//        val isSuddenAccel = accel < 5f && speed > 20f && rpm > 2000f
+//        graphView.updateData(
+//            xValue = x,
+//            speed = speed,
+//            brake = brake,
+//            accel = accel,
+//            rpm = rpm,
+//            highlight = isSuddenAccel
+//        )
+//        if (isAdded && isSuddenAccel) {
+//            val intent = Intent(requireContext(), SuddenActivity::class.java)
+//            startActivity(intent)
+//        }
+//        index++
+//        handler.postDelayed({ simulateRealTimeUpdate() }, 500)
     }
 }

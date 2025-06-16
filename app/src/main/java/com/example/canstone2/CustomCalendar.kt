@@ -20,8 +20,8 @@ class CustomCalendarView(context: Context, attrs: AttributeSet) : LinearLayout(c
 
     private val currentCalendar = Calendar.getInstance()
     private var selectedDate: Calendar = Calendar.getInstance()
-    private var blueDates = listOf(1, 18, 22, 15)
-    private var redDates = listOf(28)
+    private var blueDates = listOf<String>()
+    private var redDates = listOf<String>()
     private var drivingTable: View? = null
 
     private lateinit var showCalendarButton: TextView
@@ -113,6 +113,7 @@ class CustomCalendarView(context: Context, attrs: AttributeSet) : LinearLayout(c
 
         override fun onBindViewHolder(holder: CalendarViewHolder, position: Int) {
             val day = days[position]
+
             if (day == 0) {
                 holder.dayText.text = ""
                 holder.dayText.setBackgroundResource(0)
@@ -120,56 +121,51 @@ class CustomCalendarView(context: Context, attrs: AttributeSet) : LinearLayout(c
                 holder.itemView.setOnClickListener(null)
                 return
             }
+
             holder.dayText.text = day.toString()
-            //val drivingTable = findViewById<ConstraintLayout>(R.id.gridContainer)
 
+            val calendarForDay = Calendar.getInstance().apply {
+                time = currentCalendar.time
+                set(Calendar.DAY_OF_MONTH, day)
+            }
+            val fireDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val fullDate = fireDateFormat.format(calendarForDay.time)
 
-            val isSelected = selectedDate.get(Calendar.DAY_OF_MONTH) == day
+            val isSelected = selectedDate.get(Calendar.DAY_OF_MONTH) == day &&
+                    selectedDate.get(Calendar.MONTH) == currentCalendar.get(Calendar.MONTH) &&
+                    selectedDate.get(Calendar.YEAR) == currentCalendar.get(Calendar.YEAR)
+
             var textColor = Color.BLACK
 
-            // 조건에 따라 날짜 텍스트 색상은 변경하지만, 배경은 선택된 경우에만 적용합니다.
             when {
-                blueDates.contains(day) -> {
+                blueDates.contains(fullDate) -> {
                     if (isSelected) {
-                        // 선택된 경우: 배경은 rounded_bg (blue 스타일, 아이콘이 흰색)
                         holder.dayText.setBackgroundResource(R.drawable.select_day_blue)
                         textColor = Color.WHITE
-                        drivingTable?.setBackgroundColor(
-                            ContextCompat.getColor(context, R.color.blue)
-                        )
-
+                        drivingTable?.setBackgroundColor(ContextCompat.getColor(context, R.color.blue))
                     } else {
-                        // 선택되지 않은 경우: 배경 없음, 텍스트는 blue
                         holder.dayText.setBackgroundResource(0)
                         textColor = Color.BLUE
                     }
                 }
 
-                redDates.contains(day) -> {
+                redDates.contains(fullDate) -> {
                     if (isSelected) {
-                        // 선택된 경우: 배경은 rounded_bg (red 스타일, 아이콘이 흰색)
                         holder.dayText.setBackgroundResource(R.drawable.select_day_red)
                         textColor = Color.WHITE
-                        drivingTable?.setBackgroundColor(
-                            ContextCompat.getColor(context, R.color.red)
-                        )
+                        drivingTable?.setBackgroundColor(ContextCompat.getColor(context, R.color.red))
                     } else {
-                        // 선택되지 않은 경우: 배경 없음, 텍스트는 red
                         holder.dayText.setBackgroundResource(0)
                         textColor = Color.RED
                     }
                 }
 
                 isSelected -> {
-                    // 그 외의 날짜 중 선택된 경우: 회색 배경, 흰색 텍스트
                     holder.dayText.setBackgroundResource(R.drawable.select_day_blue)
                     textColor = Color.WHITE
-                    //drivingTable.setBackgroundColor(ContextCompat.getColor(context, R.color.blue))
-
                 }
 
                 else -> {
-                    // 선택되지 않은 경우: 배경 없음, 텍스트는 검정색
                     holder.dayText.setBackgroundResource(0)
                     textColor = Color.GRAY
                 }
@@ -177,13 +173,16 @@ class CustomCalendarView(context: Context, attrs: AttributeSet) : LinearLayout(c
 
             holder.dayText.setTextColor(textColor)
 
-            // 날짜 선택 시 updateCalendar() 호출
             holder.itemView.setOnClickListener {
+                selectedDate.set(Calendar.YEAR, currentCalendar.get(Calendar.YEAR))
+                selectedDate.set(Calendar.MONTH, currentCalendar.get(Calendar.MONTH))
                 selectedDate.set(Calendar.DAY_OF_MONTH, day)
                 updateCalendar()
-                val fireDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val formattedDate = fireDateFormat.format(selectedDate.time)
-                dateSelectedListener?.onDateSelected(selectedDate, formattedDate)
+
+                dateSelectedListener?.onDateSelected(
+                    selectedDate,
+                    fireDateFormat.format(selectedDate.time)
+                )
             }
         }
 
@@ -191,29 +190,8 @@ class CustomCalendarView(context: Context, attrs: AttributeSet) : LinearLayout(c
     }
 
     fun setAvailableDates(blueDateList: List<String>, redDateList: List<String>) {
-        val calendar = Calendar.getInstance()
-        val currentYear = currentCalendar.get(Calendar.YEAR)
-        val currentMonth = currentCalendar.get(Calendar.MONTH)
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-        fun extractDays(dateList: List<String>): List<Int> {
-            return dateList.mapNotNull {
-                try {
-                    calendar.time = sdf.parse(it)!!
-                    val year = calendar.get(Calendar.YEAR)
-                    val month = calendar.get(Calendar.MONTH)
-                    val day = calendar.get(Calendar.DAY_OF_MONTH)
-
-                    if (year == currentYear && month == currentMonth) day else null
-                } catch (e: Exception) {
-                    Log.e("CustomCalendarView", "날짜 파싱 오류: $it")
-                    null
-                }
-            }.distinct().sorted()
-        }
-
-        blueDates = extractDays(blueDateList)
-        redDates = extractDays(redDateList)
+        blueDates = blueDateList
+        redDates = redDateList
 
         updateCalendar()
     }

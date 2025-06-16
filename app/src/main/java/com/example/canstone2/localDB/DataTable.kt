@@ -10,9 +10,9 @@ data class ObdData(
     val rpm: Float
 )
 
-data class BleData(
+data class ArduinoData(
     val accel: Int,
-    val brake: String
+    val brake: Int
 )
 
 // 복합 키 지정
@@ -26,7 +26,7 @@ data class DataTableSensor(
     @ColumnInfo(name = "accelerator") val accel: Int,
     @ColumnInfo(name = "rpm") val rpm : Float,
     @ColumnInfo(name = "speed") val speed : Int,
-    @ColumnInfo(name = "brake") val brake : String,
+    @ColumnInfo(name = "brake") val brake : Int,
 )
 
 // 센서 예측 결과 클래스 테이블

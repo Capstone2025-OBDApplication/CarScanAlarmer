@@ -45,7 +45,7 @@ object ManagerFirebase {
         }
     }
 
-    fun addSensorDataBuffer(speed: Int, rpm: Float, accel: Int, brake: String) {
+    fun addSensorDataBuffer(speed: Int, rpm: Float, accel: Int, brake: Int) {
         if (buffer.isEmpty()) startBuffering()
 
         val data = DataTableSensor (

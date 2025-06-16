@@ -5,6 +5,10 @@ import android.speech.tts.TextToSpeech
 import androidx.appcompat.app.AppCompatActivity
 import com.example.canstone2.databinding.ActivitySuddenWarningBinding
 import java.util.*
+import android.util.Log
+import android.content.Intent
+
+
 
 class SuddenWarningActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var tts: TextToSpeech  // TTS 선언
@@ -19,9 +23,12 @@ class SuddenWarningActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
         binding.backToMainButton.setOnClickListener {
             finish()
+            finish()
 
         }
     }
+
+
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             val result = tts.setLanguage(Locale.KOREAN)
@@ -45,5 +52,6 @@ class SuddenWarningActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onDestroy()
         tts.stop()
         tts.shutdown()
+
     }
 }
