@@ -14,14 +14,6 @@
         android:gravity="center_vertical"
         android:padding="16dp">
 
-        <!-- 이미지 아이콘 (반복되지 않음) -->
-        <ImageView
-            android:id="@+id/ic_back"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_back"
-            android:layout_marginEnd="8dp"/>
-
         <!-- 이미지 옆에 고정된 텍스트 -->
         <TextView
             android:id="@+id/titleTextView"
